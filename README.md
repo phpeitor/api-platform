@@ -16,11 +16,18 @@
 
 Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform para consultar la tabla `BD_CRUCES.dbo.reniec` en SQL Server.
 
+**Todos los endpoints requieren autenticación por Bearer Token.**
+
 ### Endpoint principal
 
 - `GET /api/reniec/{dni}`
 - Ejemplo: `http://127.0.0.1:9010/api/reniec/46798772`
 - Documentacion: `http://127.0.0.1:9010/api/docs`
+- **Requiere:** Header `Authorization: Bearer YOUR_TOKEN`
+
+### Endpoints públicos (sin autenticación)
+
+- `GET /api/health` - Verificación de estado del servicio (sin token requerido)
 
 ### Fuente de datos
 
@@ -56,6 +63,17 @@ php artisan key:generate
 3. Revisar y completar los datos de SQL Server en `.env`:
 
 ```dotenv
+# Conexión principal (para tablas de la app)
+DB_CONNECTION=sqlsrv_main
+SQLSRV_MAIN_HOST=127.0.0.1
+SQLSRV_MAIN_PORT=1433
+SQLSRV_MAIN_DATABASE=BD_CRUCES
+SQLSRV_MAIN_USERNAME=sa
+SQLSRV_MAIN_PASSWORD=tu_clave
+SQLSRV_MAIN_ENCRYPT=yes
+SQLSRV_MAIN_TRUST_SERVER_CERTIFICATE=true
+
+# Conexión a RENIEC (puede ser la misma que arriba)
 RENIEC_DB_HOST=127.0.0.1
 RENIEC_DB_PORT=1433
 RENIEC_DB_DATABASE=BD_CRUCES
@@ -71,10 +89,39 @@ RENIEC_DB_TRUST_SERVER_CERTIFICATE=true
 php artisan optimize:clear
 ```
 
-5. Publicar assets de API Platform si la carpeta `public/vendor/api-platform` no existe:
+5. Ejecutar migraciones para crear tabla de tokens:
+
+```bash
+php artisan migrate
+```
+
+6. Publicar assets de API Platform si la carpeta `public/vendor/api-platform` no existe:
 
 ```bash
 php artisan vendor:publish --tag=api-platform-assets --force
+```
+
+## Generación de Tokens
+
+Usa el comando artisan para generar nuevos tokens:
+
+```bash
+php artisan token:generate --name="Mi Aplicación" --description="Token para prod"
+```
+
+Ejemplo de salida:
+
+```
+✅ Token creado exitosamente!
+
+ID: 1
+Nombre: Mi Aplicación
+Descripción: Token para prod
+
+Token:
+token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK
+
+⚠️  Copia este token en un lugar seguro. No podras verlo nuevamente.
 ```
 
 ## Ejecucion local
@@ -85,16 +132,24 @@ Para pruebas locales puedes levantar el servidor de desarrollo en el puerto `901
 php artisan serve --host=0.0.0.0 --port=9010
 ```
 
-Luego consulta:
+Luego consulta CON TOKEN:
 
 ```bash
-curl http://127.0.0.1:9010/api/reniec/46798772
+curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+     http://127.0.0.1:9010/api/reniec/46798772
 ```
 
-O desde la IP publica del VPS:
+O desde la IP publica del VPS (requiere firewall abierto):
 
 ```bash
-curl http://161.132.4.164:9010/api/reniec/46798772
+curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+     http://161.132.4.164:9010/api/reniec/46798772
+```
+
+Verificar salud sin token:
+
+```bash
+curl http://127.0.0.1:9010/api/health
 ```
 
 ## Respuesta esperada
@@ -103,21 +158,66 @@ El endpoint devuelve una respuesta JSON-LD de API Platform con la informacion en
 
 Ejemplo de estructura:
 
+```jsonALEJANDRO MANUEL",
+    "PATERNO": "MONTALVAN",
+    "MATERNO": "BRAVO",
+    "NACIMIENTO": "1991-02-03",
+    "SEXO": "M"
+  }
+}
+```
+
+## Errores de autenticacion
+
+**401 Unauthorized** - Falta header Authorization o token no valido:
 ```json
 {
-  "@context": "/api/contexts/Reniec",
+  "error": "Missing or invalid Authorization header",
+  "message": "Please provide a valid Bearer token in the Authorization header",
+  "example": "Authorization: Bearer YOUR_TOKEN_HERE"
+} (sin token)
+- `GET /api/reniec/{dni}` - Consulta RENIEC por DNI (requiere token)
+
+## Gestión de tokens en BD
+
+Los tokens se almacenan en la tabla `api_tokens` con los campos:
+
+- `id` - ID único del token
+- `name` - Nombre/descripción del cliente
+- `token` - Token único (nunca se repite)
+- `description` - Descripción adicional del uso
+- `last_used_at` - Último acceso (se actualiza automáticamente)
+- `created_at` - Fecha de creación
+- `updated_at` - Última actualización
+
+Para ver los tokens registrados (acceso a base de datos):
+
+```sql
+USE BD_CRUCES;
+SELECT id, name, description, last_used_at, created_at FROM api_tokens;
+```
+
+**403 Forbidden** - Token inválido o expirado:
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or expired token"@context": "/api/contexts/Reniec",
   "@id": "/api/reniec/46798772",
   "@type": "Reniec",
   "dni": "46798772",
   "attributes": {
     "DNI": "46798772",
     "NOMBRES": "...",
-    "PATERNO": "..."
+5. Verificar que el puerto `1433` (SQL Server) esté accesible desde el servidor.
+6. Cambiar las contraseñas de los tokens regularmente.
+7. Implementar rate limiting por token (opcional).
   }
 }
 ```
 
-## Rutas utiles
+##Los tokens se almacenan en texto plano en BD; usa SSL/TLS en producción.
+- El token se registra cada vez que se accede (`last_used_at` se actualiza).
+- Genera un nuevo token por cada cliente/aplicación para mejor auditoria
 
 - `GET /api/docs` - Documentacion interactiva de API Platform
 - `GET /api/health` - Verificacion basica del servicio

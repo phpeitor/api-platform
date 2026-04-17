@@ -12,7 +12,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'check.api.token' => \App\Http\Middleware\CheckApiToken::class,
+        ]);
+
+        // Aplicar middleware globalmente a todas las rutas /api/
+        // excepto /api/health
+        $middleware->use([
+            \App\Http\Middleware\CheckApiToken::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

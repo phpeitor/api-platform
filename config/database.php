@@ -114,6 +114,21 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'sqlsrv_main' => [
+            'driver' => 'sqlsrv',
+            'url' => env('SQLSRV_MAIN_URL'),
+            'host' => env('SQLSRV_MAIN_HOST', '127.0.0.1'),
+            'port' => env('SQLSRV_MAIN_PORT', '1433'),
+            'database' => env('SQLSRV_MAIN_DATABASE', 'BD_CRUCES'),
+            'username' => env('SQLSRV_MAIN_USERNAME', 'sa'),
+            'password' => env('SQLSRV_MAIN_PASSWORD', ''),
+            'charset' => env('SQLSRV_MAIN_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'encrypt' => env('SQLSRV_MAIN_ENCRYPT', 'yes'),
+            'trust_server_certificate' => env('SQLSRV_MAIN_TRUST_SERVER_CERTIFICATE', 'true'),
+        ],
+
         'sqlsrv_reniec' => [
             'driver' => 'sqlsrv',
             'url' => env('RENIEC_DB_URL'),
