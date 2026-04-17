@@ -56,7 +56,7 @@ php artisan key:generate
 3. Revisar y completar los datos de SQL Server en `.env`:
 
 ```dotenv
-RENIEC_DB_HOST=161.132.4.164
+RENIEC_DB_HOST=127.0.0.1
 RENIEC_DB_PORT=1433
 RENIEC_DB_DATABASE=BD_CRUCES
 RENIEC_DB_USERNAME=sa
