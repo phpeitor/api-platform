@@ -12,7 +12,7 @@
   API REST para consultar datos de RENIEC por DNI desde SQL Server.
 </p>
 
-## Descripcion
+## Descripción
 
 Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform para consultar la tabla `BD_CRUCES.dbo.reniec` en SQL Server.
 
@@ -22,7 +22,7 @@ Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform p
 
 - `GET /api/reniec/{dni}`
 - Ejemplo: `http://127.0.0.1:9010/api/reniec/46798772`
-- Documentacion: `http://127.0.0.1:9010/api/docs`
+- Documentación: `http://127.0.0.1:9010/api/docs`
 - **Requiere:** Header `Authorization: Bearer YOUR_TOKEN`
 
 ### Endpoints públicos (sin autenticación)
@@ -45,22 +45,22 @@ Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform p
   - `pdo_sqlsrv`
 - Acceso al puerto `1433` del servidor SQL Server
 
-## Instalacion
+## Instalación
 
-1. Instalar dependencias:
+### 1. Instalar dependencias:
 
 ```bash
 composer install
 ```
 
-2. Copiar y configurar variables de entorno:
+### 2. Copiar y configurar variables de entorno:
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-3. Revisar y completar los datos de SQL Server en `.env`:
+### 3. Revisar y completar los datos de SQL Server en `.env`:
 
 ```dotenv
 # Conexión principal (para tablas de la app)
@@ -83,19 +83,19 @@ RENIEC_DB_ENCRYPT=yes
 RENIEC_DB_TRUST_SERVER_CERTIFICATE=true
 ```
 
-4. Limpiar caché de Laravel:
+### 4. Limpiar caché de Laravel:
 
 ```bash
 php artisan optimize:clear
 ```
 
-5. Ejecutar migraciones para crear tabla de tokens:
+### 5. Ejecutar migraciones para crear tabla de tokens:
 
 ```bash
 php artisan migrate
 ```
 
-6. Publicar assets de API Platform si la carpeta `public/vendor/api-platform` no existe:
+### 6. Publicar assets de API Platform:
 
 ```bash
 php artisan vendor:publish --tag=api-platform-assets --force
@@ -124,7 +124,7 @@ token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK
 ⚠️  Copia este token en un lugar seguro. No podras verlo nuevamente.
 ```
 
-## Ejecucion local
+## Ejecución local
 
 Para pruebas locales puedes levantar el servidor de desarrollo en el puerto `9010`:
 
@@ -132,21 +132,21 @@ Para pruebas locales puedes levantar el servidor de desarrollo en el puerto `901
 php artisan serve --host=0.0.0.0 --port=9010
 ```
 
-Luego consulta CON TOKEN:
+### Consultar con token válido:
 
 ```bash
 curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
      http://127.0.0.1:9010/api/reniec/46798772
 ```
 
-O desde la IP publica del VPS (requiere firewall abierto):
+### Desde la IP pública del VPS:
 
 ```bash
 curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
      http://161.132.4.164:9010/api/reniec/46798772
 ```
 
-Verificar salud sin token:
+### Verificar salud sin token:
 
 ```bash
 curl http://127.0.0.1:9010/api/health
@@ -154,11 +154,19 @@ curl http://127.0.0.1:9010/api/health
 
 ## Respuesta esperada
 
-El endpoint devuelve una respuesta JSON-LD de API Platform con la informacion encontrada en la base de datos.
+El endpoint devuelve una respuesta JSON-LD de API Platform con la información encontrada en la base de datos.
 
 Ejemplo de estructura:
 
-```jsonALEJANDRO MANUEL",
+```json
+{
+  "@context": "/api/contexts/Reniec",
+  "@id": "/api/reniec/46798772",
+  "@type": "Reniec",
+  "dni": "46798772",
+  "attributes": {
+    "DNI": "46798772",
+    "NOMBRES": "ALEJANDRO MANUEL",
     "PATERNO": "MONTALVAN",
     "MATERNO": "BRAVO",
     "NACIMIENTO": "1991-02-03",
@@ -167,15 +175,33 @@ Ejemplo de estructura:
 }
 ```
 
-## Errores de autenticacion
+## Errores de autenticación
 
-**401 Unauthorized** - Falta header Authorization o token no valido:
+### 401 Unauthorized
+Falta header Authorization o token no válido:
+
 ```json
 {
   "error": "Missing or invalid Authorization header",
   "message": "Please provide a valid Bearer token in the Authorization header",
   "example": "Authorization: Bearer YOUR_TOKEN_HERE"
-} (sin token)
+}
+```
+
+### 403 Forbidden
+Token inválido o expirado:
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or expired token"
+}
+```
+
+## Rutas útiles
+
+- `GET /api/docs` - Documentación interactiva de API Platform
+- `GET /api/health` - Verificación básica del servicio (sin token)
 - `GET /api/reniec/{dni}` - Consulta RENIEC por DNI (requiere token)
 
 ## Gestión de tokens en BD
@@ -190,55 +216,33 @@ Los tokens se almacenan en la tabla `api_tokens` con los campos:
 - `created_at` - Fecha de creación
 - `updated_at` - Última actualización
 
-Para ver los tokens registrados (acceso a base de datos):
+Para ver los tokens registrados:
 
 ```sql
 USE BD_CRUCES;
 SELECT id, name, description, last_used_at, created_at FROM api_tokens;
 ```
 
-**403 Forbidden** - Token inválido o expirado:
-```json
-{
-  "error": "Unauthorized",
-  "message": "Invalid or expired token"@context": "/api/contexts/Reniec",
-  "@id": "/api/reniec/46798772",
-  "@type": "Reniec",
-  "dni": "46798772",
-  "attributes": {
-    "DNI": "46798772",
-    "NOMBRES": "...",
-5. Verificar que el puerto `1433` (SQL Server) esté accesible desde el servidor.
-6. Cambiar las contraseñas de los tokens regularmente.
-7. Implementar rate limiting por token (opcional).
-  }
-}
-```
-
-##Los tokens se almacenan en texto plano en BD; usa SSL/TLS en producción.
-- El token se registra cada vez que se accede (`last_used_at` se actualiza).
-- Genera un nuevo token por cada cliente/aplicación para mejor auditoria
-
-- `GET /api/docs` - Documentacion interactiva de API Platform
-- `GET /api/health` - Verificacion basica del servicio
-- `GET /api/reniec/{dni}` - Consulta RENIEC por DNI
-
 ## Despliegue en dominio
 
 Cuando vayas a publicar el proyecto en un dominio, lo recomendado es:
 
-1. Apuntar Nginx o Apache al directorio `public/`.
-2. Usar PHP-FPM en lugar de `php artisan serve`.
-3. Configurar SSL con Let’s Encrypt.
-4. Cambiar `APP_URL` al dominio final.
-5. Verificar que el puerto `9010` no quede expuesto en produccion si no lo necesitas.
+1. Apuntar Nginx o Apache al directorio `public/`
+2. Usar PHP-FPM en lugar de `php artisan serve`
+3. Configurar SSL con Let's Encrypt
+4. Cambiar `APP_URL` al dominio final
+5. Verificar que el puerto `1433` (SQL Server) esté accesible desde el servidor
+6. Cambiar las contraseñas de los tokens regularmente
+7. Implementar rate limiting por token (opcional)
 
 ## Notas
 
-- El parametro `dni` es obligatorio y va en la ruta, no en el body.
-- La consulta usa la conexion `sqlsrv_reniec`.
-- Si no hay coincidencia para el DNI, el servicio devuelve error de no encontrado.
-- Si quieres agregar autenticacion por token, puede incorporarse sin cambiar el endpoint.
+- El parámetro `dni` es obligatorio y va en la ruta, no en el body
+- La consulta usa la conexión `sqlsrv_reniec`
+- Si no hay coincidencia para el DNI, el servicio devuelve error 404
+- Los tokens se almacenan en texto plano en BD; usa SSL/TLS en producción
+- El token se registra cada vez que se accede (`last_used_at` se actualiza)
+- Genera un nuevo token por cada cliente/aplicación para mejor auditoría
 
 ## Licencia
 
