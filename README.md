@@ -139,13 +139,6 @@ curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0
      http://127.0.0.1:9010/api/reniec/46798772
 ```
 
-### Desde la IP pública del VPS:
-
-```bash
-curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
-     http://161.132.4.164:9010/api/reniec/46798772
-```
-
 ### Verificar salud sin token:
 
 ```bash
