@@ -24,7 +24,7 @@ Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform p
 
 ### Fuente de datos
 
-- Servidor SQL Server: `161.132.4.164`
+- Servidor SQL Server: `127.0.0.1`
 - Base de datos: `BD_CRUCES`
 - Tabla: `dbo.reniec`
 - Filtro principal: `dni`
