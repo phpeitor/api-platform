@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://api-platform.com" target="_blank" rel="noopener noreferrer">
-    <img src="https://api-platform.com/images/logo/logo.svg" width="260" alt="API Platform Logo">
+    <img src="https://api-platform.com/images/super-webby.svg" width="260" alt="API Platform Logo">
   </a>
 </p>
 
