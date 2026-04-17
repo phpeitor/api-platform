@@ -1,59 +1,145 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <a href="https://api-platform.com" target="_blank" rel="noopener noreferrer">
+    <img src="https://api-platform.com/images/logo/logo.svg" width="260" alt="API Platform Logo">
+  </a>
 </p>
 
-## About Laravel
+<p align="center">
+  <strong>API RENIEC con Laravel + API Platform</strong>
+</p>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">
+  API REST para consultar datos de RENIEC por DNI desde SQL Server.
+</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Descripcion
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform para consultar la tabla `BD_CRUCES.dbo.reniec` en SQL Server.
 
-## Learning Laravel
+### Endpoint principal
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- `GET /api/reniec/{dni}`
+- Ejemplo: `http://127.0.0.1:9010/api/reniec/46798772`
+- Documentacion: `http://127.0.0.1:9010/api/docs`
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Fuente de datos
 
-## Laravel Sponsors
+- Servidor SQL Server: `161.132.4.164`
+- Base de datos: `BD_CRUCES`
+- Tabla: `dbo.reniec`
+- Filtro principal: `dni`
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Requisitos
 
-### Premium Partners
+- PHP 8.2 o superior
+- Composer
+- Extensiones PHP para SQL Server:
+  - `sqlsrv`
+  - `pdo_sqlsrv`
+- Acceso al puerto `1433` del servidor SQL Server
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Instalacion
 
-## Contributing
+1. Instalar dependencias:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer install
+```
 
-## Code of Conduct
+2. Copiar y configurar variables de entorno:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## Security Vulnerabilities
+3. Revisar y completar los datos de SQL Server en `.env`:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```dotenv
+RENIEC_DB_HOST=161.132.4.164
+RENIEC_DB_PORT=1433
+RENIEC_DB_DATABASE=BD_CRUCES
+RENIEC_DB_USERNAME=sa
+RENIEC_DB_PASSWORD=tu_clave
+RENIEC_DB_ENCRYPT=yes
+RENIEC_DB_TRUST_SERVER_CERTIFICATE=true
+```
 
-## License
+4. Limpiar caché de Laravel:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan optimize:clear
+```
+
+5. Publicar assets de API Platform si la carpeta `public/vendor/api-platform` no existe:
+
+```bash
+php artisan vendor:publish --tag=api-platform-assets --force
+```
+
+## Ejecucion local
+
+Para pruebas locales puedes levantar el servidor de desarrollo en el puerto `9010`:
+
+```bash
+php artisan serve --host=0.0.0.0 --port=9010
+```
+
+Luego consulta:
+
+```bash
+curl http://127.0.0.1:9010/api/reniec/46798772
+```
+
+O desde la IP publica del VPS:
+
+```bash
+curl http://161.132.4.164:9010/api/reniec/46798772
+```
+
+## Respuesta esperada
+
+El endpoint devuelve una respuesta JSON-LD de API Platform con la informacion encontrada en la base de datos.
+
+Ejemplo de estructura:
+
+```json
+{
+  "@context": "/api/contexts/Reniec",
+  "@id": "/api/reniec/46798772",
+  "@type": "Reniec",
+  "dni": "46798772",
+  "attributes": {
+    "DNI": "46798772",
+    "NOMBRES": "...",
+    "PATERNO": "..."
+  }
+}
+```
+
+## Rutas utiles
+
+- `GET /api/docs` - Documentacion interactiva de API Platform
+- `GET /api/health` - Verificacion basica del servicio
+- `GET /api/reniec/{dni}` - Consulta RENIEC por DNI
+
+## Despliegue en dominio
+
+Cuando vayas a publicar el proyecto en un dominio, lo recomendado es:
+
+1. Apuntar Nginx o Apache al directorio `public/`.
+2. Usar PHP-FPM en lugar de `php artisan serve`.
+3. Configurar SSL con Let’s Encrypt.
+4. Cambiar `APP_URL` al dominio final.
+5. Verificar que el puerto `9010` no quede expuesto en produccion si no lo necesitas.
+
+## Notas
+
+- El parametro `dni` es obligatorio y va en la ruta, no en el body.
+- La consulta usa la conexion `sqlsrv_reniec`.
+- Si no hay coincidencia para el DNI, el servicio devuelve error de no encontrado.
+- Si quieres agregar autenticacion por token, puede incorporarse sin cambiar el endpoint.
+
+## Licencia
+
+Proyecto interno para consumo de datos RENIEC.
