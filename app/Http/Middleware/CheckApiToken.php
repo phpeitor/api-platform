@@ -11,8 +11,25 @@ class CheckApiToken
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Permitir acceso a /health sin autenticación
-        if ($request->path() === 'api/health') {
+        $publicPaths = [
+            'api/health',
+            'api/docs',
+            'api/contexts',
+            'api/errors',
+            'api/validation_errors',
+            'api/.well-known',
+        ];
+
+        $requestPath = $request->path();
+
+        foreach ($publicPaths as $publicPath) {
+            if ($requestPath === $publicPath || str_starts_with($requestPath, $publicPath.'/')) {
+                return $next($request);
+            }
+        }
+
+        // Permitir acceso a la raíz del API Platform sin autenticación cuando aplica
+        if ($requestPath === 'api' || $requestPath === 'api/') {
             return $next($request);
         }
 
@@ -35,7 +52,7 @@ class CheckApiToken
         if (!$apiToken) {
             return response()->json([
                 'error' => 'Unauthorized',
-                'message' => 'Invalid or expired token',
+                'message' => 'Invalid token',
             ], 403);
         }
 
