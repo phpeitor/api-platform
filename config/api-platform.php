@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'title' => 'API RENIEC',
-    'description' => 'Consulta RENIEC por DNI',
+    'title' => 'Metadatape',
+    'description' => 'Consulta por DNI & PHONE. Genera tokens de API para acceder a los endpoints protegidos.',
     'show_webby' => false,
 
     // Priorizamos HTML para que /api/docs abra la interfaz en navegador y en curl sin Accept.
