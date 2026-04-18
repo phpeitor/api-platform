@@ -34,5 +34,9 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'api_token_generator' => [
+        'secret' => env('API_TOKEN_GENERATOR_SECRET'),
+        'default_expires_in_days' => env('API_TOKEN_DEFAULT_EXPIRES_IN_DAYS', 30),
+    ],
 
 ];

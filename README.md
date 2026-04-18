@@ -18,6 +18,8 @@ Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform p
 
 **Todos los endpoints requieren autenticación por Bearer Token.**
 
+Los tokens tienen expiración real. Por defecto duran 30 días, salvo que se indique otro valor al generarlos.
+
 ### Endpoint principal
 
 - `GET /api/reniec/{dni}`
@@ -28,6 +30,7 @@ Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform p
 ### Endpoints públicos (sin autenticación)
 
 - `GET /api/health` - Verificación de estado del servicio (sin token requerido)
+- `POST /api/tokens/generate` - Genera un token nuevo usando el header `X-API-ADMIN-TOKEN`
 
 ### Fuente de datos
 
@@ -190,6 +193,19 @@ Token inválido o expirado:
   "message": "Invalid or expired token"
 }
 ```
+
+## Generación de tokens por API
+
+Puedes generar tokens desde HTTP con este request:
+
+```bash
+curl -X POST https://api.metadatape.com/api/tokens/generate \
+  -H "X-API-ADMIN-TOKEN: TU_SECRETO_ADMIN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Mi App","description":"Token de producción","expires_in_days":30}'
+```
+
+El secreto se configura en `API_TOKEN_GENERATOR_SECRET`.
 
 ## Rutas útiles
 

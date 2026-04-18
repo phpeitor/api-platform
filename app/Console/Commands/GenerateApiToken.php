@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class GenerateApiToken extends Command
 {
-    protected $signature = 'token:generate {--name=MyApp : Nombre del token} {--description= : Descripción del token}';
+    protected $signature = 'token:generate {--name=MyApp : Nombre del token} {--description= : Descripción del token} {--expires-in-days=30 : Días de expiración del token}';
 
     protected $description = 'Generar un nuevo token de API';
 
@@ -16,6 +16,7 @@ class GenerateApiToken extends Command
     {
         $name = $this->option('name');
         $description = $this->option('description');
+        $expiresInDays = (int) $this->option('expires-in-days');
         
         // Generar un token único
         $token = 'token_' . Str::random(60);
@@ -25,6 +26,7 @@ class GenerateApiToken extends Command
             'name' => $name,
             'token' => $token,
             'description' => $description,
+            'expires_at' => now()->addDays($expiresInDays),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -36,6 +38,7 @@ class GenerateApiToken extends Command
         if ($description) {
             $this->line("<info>Descripción:</info> $description");
         }
+        $this->line("<info>Expira en:</info> {$expiresInDays} días");
         $this->line('');
         $this->line('<comment>Token:</comment>');
         $this->line("<fg=yellow>$token</>");

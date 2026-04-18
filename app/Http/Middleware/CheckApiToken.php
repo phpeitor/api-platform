@@ -18,6 +18,7 @@ class CheckApiToken
             'api/errors',
             'api/validation_errors',
             'api/.well-known',
+            'api/tokens/generate',
         ];
 
         $requestPath = $request->path();
@@ -53,6 +54,13 @@ class CheckApiToken
             return response()->json([
                 'error' => 'Unauthorized',
                 'message' => 'Invalid token',
+            ], 403);
+        }
+
+        if ($apiToken->expires_at && now()->greaterThan($apiToken->expires_at)) {
+            return response()->json([
+                'error' => 'Unauthorized',
+                'message' => 'Token expired',
             ], 403);
         }
 
