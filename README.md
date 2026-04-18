@@ -23,9 +23,17 @@ Los tokens tienen expiración real. Por defecto duran 30 días, salvo que se ind
 ### Endpoint principal
 
 - `GET /api/reniec/{dni}`
-- Ejemplo: `http://127.0.0.1:9010/api/reniec/46798772`
+- Ejemplo: `http://127.0.0.1:9010/api/reniec/12345678`
 - Documentación: `http://127.0.0.1:9010/api/docs`
 - **Requiere:** Header `Authorization: Bearer YOUR_TOKEN`
+
+### Endpoints AMDOCS
+
+- `GET /api/document/{document}`
+- Ejemplo: `https://api.metadatape.com/api/document/12345678`
+
+- `GET /api/telefono/{telefono}`
+- Ejemplo: `https://api.metadatape.com/api/telefono/942890820`
 
 ### Endpoints públicos (sin autenticación)
 
@@ -139,7 +147,7 @@ php artisan serve --host=0.0.0.0 --port=9010
 
 ```bash
 curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
-     http://127.0.0.1:9010/api/reniec/46798772
+     http://127.0.0.1:9010/api/reniec/12345678
 ```
 
 ### Verificar salud sin token:
@@ -157,15 +165,14 @@ Ejemplo de estructura:
 ```json
 {
   "@context": "/api/contexts/Reniec",
-  "@id": "/api/reniec/46798772",
+  "@id": "/api/reniec/12345678",
   "@type": "Reniec",
-  "dni": "46798772",
+  "dni": "12345678",
   "attributes": {
-    "DNI": "46798772",
+    "DNI": "12345678",
     "NOMBRES": "ALEJANDRO MANUEL",
     "PATERNO": "MONTALVAN",
     "MATERNO": "BRAVO",
-    "NACIMIENTO": "1991-02-03",
     "SEXO": "M"
   }
 }
@@ -212,6 +219,8 @@ El secreto se configura en `API_TOKEN_GENERATOR_SECRET`.
 - `GET /api/docs` - Documentación interactiva de API Platform
 - `GET /api/health` - Verificación básica del servicio (sin token)
 - `GET /api/reniec/{dni}` - Consulta RENIEC por DNI (requiere token)
+- `GET /api/document/{document}` - Consulta AMDOCS por documento (requiere token)
+- `GET /api/telefono/{telefono}` - Consulta AMDOCS por teléfono (requiere token)
 
 ## Gestión de tokens en BD
 
