@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Aplicar middleware globalmente a todas las rutas /api/
         // excepto /api/health
         $middleware->use([
+            \App\Http\Middleware\LogEndpointQuery::class,
             \App\Http\Middleware\CheckApiToken::class,
         ]);
     })

@@ -73,6 +73,14 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'endpoint_queries' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/endpoint-queries.log'),
+            'level' => env('LOG_ENDPOINT_QUERIES_LEVEL', 'info'),
+            'days' => env('LOG_ENDPOINT_QUERIES_DAYS', 30),
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

@@ -222,6 +222,27 @@ El secreto se configura en `API_TOKEN_GENERATOR_SECRET`.
 - `GET /api/document/{document}` - Consulta AMDOCS por documento (requiere token)
 - `GET /api/telefono/{telefono}` - Consulta AMDOCS por teléfono (requiere token)
 
+## Log de consultas de endpoints
+
+Todas las consultas a endpoints bajo `/api/*` se registran automáticamente en:
+
+- `storage/logs/endpoint-queries.log`
+
+Cada registro incluye método, ruta, URL completa, código HTTP, tiempo de respuesta, IP, User-Agent, parámetros y body saneado.
+
+Para monitorear en tiempo real:
+
+```bash
+tail -f storage/logs/endpoint-queries.log
+```
+
+Variables opcionales en `.env`:
+
+```dotenv
+LOG_ENDPOINT_QUERIES_LEVEL=info
+LOG_ENDPOINT_QUERIES_DAYS=30
+```
+
 ## Gestión de tokens en BD
 
 Los tokens se almacenan en la tabla `api_tokens` con los campos:
