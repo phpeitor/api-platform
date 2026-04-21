@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>API RENIEC con Laravel + API Platform</strong>
+  <strong>API RENIEC + API Platform</strong>
 </p>
 
 <p align="center">
@@ -27,13 +27,13 @@ Los tokens tienen expiración real. Por defecto duran 30 días, salvo que se ind
 - Documentación: `http://127.0.0.1:9010/api/docs`
 - **Requiere:** Header `Authorization: Bearer YOUR_TOKEN`
 
-### Endpoints AMDOCS
+### Endpoints secundario
 
 - `GET /api/document/{document}`
-- Ejemplo: `https://api.metadatape.com/api/document/12345678`
+- Ejemplo: `http://127.0.0.1:9010/api/document/12345678`
 
 - `GET /api/telefono/{telefono}`
-- Ejemplo: `https://api.metadatape.com/api/telefono/942890820`
+- Ejemplo: `http://127.0.0.1:9010/api/telefono/942890820`
 
 ### Endpoints públicos (sin autenticación)
 
@@ -206,7 +206,7 @@ Token inválido o expirado:
 Puedes generar tokens desde HTTP con este request:
 
 ```bash
-curl -X POST https://api.metadatape.com/api/tokens/generate \
+curl -X POST http://127.0.0.1:9010/api/tokens/generate \
   -H "X-API-ADMIN-TOKEN: TU_SECRETO_ADMIN" \
   -H "Content-Type: application/json" \
   -d '{"name":"Mi App","description":"Token de producción","expires_in_days":30}'
