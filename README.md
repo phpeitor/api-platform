@@ -48,6 +48,12 @@ Regla para `GET /api/claro/document/{document}`:
 - Si todos los registros encontrados tienen el mismo `titular`, `documento` y `plan_claro`, la respuesta consolida y devuelve una lista de `telefonos`.
 - Si no coinciden esos campos entre filas, devuelve todas las filas en `results`.
 
+### Endpoints RUC
+
+- `GET /api/ruc/{ruc}`
+- Ejemplo: `http://127.0.0.1:9010/api/ruc/10100214283`
+- RUC debe tener exactamente 11 dígitos.
+
 ### Endpoints públicos (sin autenticación)
 
 - `GET /api/health` - Verificación de estado del servicio (sin token requerido)
@@ -177,10 +183,11 @@ curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0
   http://127.0.0.1:9010/api/claro/telefono/944271091
 ```
 
-### Verificar salud sin token:
+### Consultar RUC (11 dígitos):
 
 ```bash
-curl http://127.0.0.1:9010/api/health
+curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+     http://127.0.0.1:9010/api/ruc/10100214283
 ```
 
 ## Respuesta esperada
@@ -250,6 +257,7 @@ El secreto se configura en `API_TOKEN_GENERATOR_SECRET`.
 - `GET /api/telefono/{telefono}` - Consulta AMDOCS por teléfono (requiere token)
 - `GET /api/claro/document/{document}` - Consulta CLARO por documento (requiere token)
 - `GET /api/claro/telefono/{telefono}` - Consulta CLARO por teléfono (requiere token)
+- `GET /api/ruc/{ruc}` - Consulta RUC (11 dígitos) (requiere token)
 
 ## Log de consultas de endpoints
 
