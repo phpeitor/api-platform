@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  API REST para consultar datos de RENIEC por DNI desde SQL Server.
+  API REST para consultar datos de RENIEC, AMDOCS y CLARO desde SQL Server.
 </p>
 
 ## Descripción
 
-Este proyecto expone un endpoint REST construido con Laravel 12 y API Platform para consultar la tabla `BD_CRUCES.dbo.reniec` en SQL Server.
+Este proyecto expone endpoints REST construidos con Laravel 12 y API Platform para consultar tablas de `BD_CRUCES` en SQL Server (`dbo.reniec`, `dbo.amdocs`, `dbo.claro`).
 
 **Todos los endpoints requieren autenticación por Bearer Token.**
 
@@ -27,13 +27,26 @@ Los tokens tienen expiración real. Por defecto duran 30 días, salvo que se ind
 - Documentación: `http://127.0.0.1:9010/api/docs`
 - **Requiere:** Header `Authorization: Bearer YOUR_TOKEN`
 
-### Endpoints secundario
+### Endpoints secundarios
 
 - `GET /api/document/{document}`
 - Ejemplo: `http://127.0.0.1:9010/api/document/12345678`
 
 - `GET /api/telefono/{telefono}`
 - Ejemplo: `http://127.0.0.1:9010/api/telefono/942890820`
+
+### Endpoints Claro
+
+- `GET /api/claro/document/{document}`
+- Ejemplo: `http://127.0.0.1:9010/api/claro/document/46798772`
+
+- `GET /api/claro/telefono/{telefono}`
+- Ejemplo: `http://127.0.0.1:9010/api/claro/telefono/944271091`
+
+Regla para `GET /api/claro/document/{document}`:
+
+- Si todos los registros encontrados tienen el mismo `titular`, `documento` y `plan_claro`, la respuesta consolida y devuelve una lista de `telefonos`.
+- Si no coinciden esos campos entre filas, devuelve todas las filas en `results`.
 
 ### Endpoints públicos (sin autenticación)
 
@@ -150,6 +163,20 @@ curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0
      http://127.0.0.1:9010/api/reniec/12345678
 ```
 
+### Consultar Claro por documento (consolidado de teléfonos):
+
+```bash
+curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+  http://127.0.0.1:9010/api/claro/document/46798772
+```
+
+### Consultar Claro por teléfono:
+
+```bash
+curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+  http://127.0.0.1:9010/api/claro/telefono/944271091
+```
+
 ### Verificar salud sin token:
 
 ```bash
@@ -221,6 +248,8 @@ El secreto se configura en `API_TOKEN_GENERATOR_SECRET`.
 - `GET /api/reniec/{dni}` - Consulta RENIEC por DNI (requiere token)
 - `GET /api/document/{document}` - Consulta AMDOCS por documento (requiere token)
 - `GET /api/telefono/{telefono}` - Consulta AMDOCS por teléfono (requiere token)
+- `GET /api/claro/document/{document}` - Consulta CLARO por documento (requiere token)
+- `GET /api/claro/telefono/{telefono}` - Consulta CLARO por teléfono (requiere token)
 
 ## Log de consultas de endpoints
 
