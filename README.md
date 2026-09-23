@@ -5,11 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>API RENIEC + API Platform</strong>
-</p>
-
-<p align="center">
-  API REST para consultar datos de RENIEC, AMDOCS y CLARO desde SQL Server.
+  API REST para consultar datos de RENIEC, SUNAT, TELEFONICA, CLARO desde SQL Server.
 </p>
 
 ## Descripción
