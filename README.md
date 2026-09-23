@@ -4,10 +4,6 @@
   </a>
 </p>
 
-<p align="center">
-  API REST para consultar datos de RENIEC, SUNAT, TELEFONICA, CLARO desde SQL Server.
-</p>
-
 ## Descripción
 
 Este proyecto expone endpoints REST construidos con Laravel 12 y API Platform para consultar tablas de `BD_CRUCES` en SQL Server (`dbo.reniec`, `dbo.amdocs`, `dbo.claro`).
