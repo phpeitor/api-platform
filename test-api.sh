@@ -1,8 +1,9 @@
 #!/bin/bash
 # Script de pruebas para API RENIEC
 
-TOKEN="token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK"
-BASE_URL="http://127.0.0.1:9010"
+# Uso: API_TOKEN=tu_token ./test-api.sh
+TOKEN="${API_TOKEN:?Define API_TOKEN con un token valido}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:9010}"
 
 echo "╔════════════════════════════════════════════════╗"
 echo "║       PRUEBAS API RENIEC CON AUTENTICACIÓN    ║"

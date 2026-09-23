@@ -145,7 +145,7 @@ Nombre: Mi Aplicación
 Descripción: Token para prod
 
 Token:
-token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK
+YOUR_TOKEN
 
 ⚠️  Copia este token en un lugar seguro. No podras verlo nuevamente.
 ```
@@ -161,28 +161,28 @@ php artisan serve --host=0.0.0.0 --port=9010
 ### Consultar con token válido:
 
 ```bash
-curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+curl -H "Authorization: Bearer YOUR_TOKEN" \
      http://127.0.0.1:9010/api/reniec/12345678
 ```
 
 ### Consultar Claro por documento (consolidado de teléfonos):
 
 ```bash
-curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+curl -H "Authorization: Bearer YOUR_TOKEN" \
   http://127.0.0.1:9010/api/claro/document/46798772
 ```
 
 ### Consultar Claro por teléfono:
 
 ```bash
-curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+curl -H "Authorization: Bearer YOUR_TOKEN" \
   http://127.0.0.1:9010/api/claro/telefono/944271091
 ```
 
 ### Consultar RUC (11 dígitos):
 
 ```bash
-curl -H "Authorization: Bearer token_qs0CnOvCCPLioThNWDEIdxfYp1nOx9emM9s1NLRU8u0IMvy5jUuLXFg2BTxK" \
+curl -H "Authorization: Bearer YOUR_TOKEN" \
      http://127.0.0.1:9010/api/ruc/10100214283
 ```
 
@@ -315,7 +315,3 @@ Cuando vayas a publicar el proyecto en un dominio, lo recomendado es:
 - Los tokens se almacenan en texto plano en BD; usa SSL/TLS en producción
 - El token se registra cada vez que se accede (`last_used_at` se actualiza)
 - Genera un nuevo token por cada cliente/aplicación para mejor auditoría
-
-## Licencia
-
-Proyecto interno para consumo de datos RENIEC.
