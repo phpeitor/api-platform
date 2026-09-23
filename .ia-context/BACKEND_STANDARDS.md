@@ -1,60 +1,66 @@
-# Estándares Backend (api-platform)
+# Estándares Backend — api-platform
 
-Reglas prácticas de código y operación para `packages/Webkul/*` y `config/*`. Ver `BACKEND_ARQUITECTURE.md` para el contexto de cada patrón.
+Reglas prácticas para trabajar en este repo. Ver `BACKEND_ARQUITECTURE.md` para el contexto de cada patrón.
 
 ## Estilo de código
 
-- PHP 8.2, Laravel Pint configurado (`pint.json`) — correr `./vendor/bin/pint --dirty` antes de dar por cerrado un cambio si se tocó mucho código.
-- Seguir el estilo de docblocks ya presente en el paquete que se edita (`/** ... * @return ... */` corto, sin relleno).
-- No agregar comentarios que expliquen el "qué" (el código ya lo dice); solo el "por qué" cuando no es obvio (p.ej. por qué GD no puede procesar GIF animado, por qué `CSS.Proprietary` debe ser `true`).
+- PHP 8.2, PSR-12. Laravel Pint está instalado: `./vendor/bin/pint --dirty` antes de cerrar un cambio.
+- Constructor property promotion y argumentos con nombre, como en los Resources/Providers existentes.
+- Comentarios solo para explicar el "por qué" (p.ej. la regla de prioridad `ACTIVO` en AMDOCS), en español.
+- Mensajes de error al cliente en español y sin tildes problemáticas en encoding (se sigue el estilo actual: "No se encontro informacion para ...").
 
-## Validación
+## Endpoints de consulta (API Platform)
 
-- Toda validación de request va en un `FormRequest` (`Http/Requests/*`). No validar a mano dentro del controller.
-- Si el campo es dinámico (atributo EAV de producto), la regla se construye en `rules()` iterando atributos — no hardcodear el campo si ya existe ese mecanismo.
-- Mensajes de error de UI (`title-info`, textos de ayuda) deben coincidir con la regla real de validación. Si cambias un límite (mimes, tamaño máximo), busca también el texto que lo describe en `Resources/lang/*/app.php` y en el Blade — no dejar la copy desincronizada del código (bug real detectado esta sesión: copy decía "~50M", regla real validaba 2048 KB).
+- **Un Resource + un Provider por endpoint.** No crear controllers para consultas que encajan en este patrón; los controllers (`routes/api.php`) quedan para acciones que no son recursos (health, generación de tokens).
+- `shortName` único y descriptivo (`ClaroByPhone`, `AmdocsByDocument`). El `uriTemplate` va sin `/api`.
+- Validar el parámetro **dos veces**: en `requirements` del `Get` (regex de ruta) y en el Provider con `preg_match` (mensaje claro → 400). Mantener ambas regex iguales (hoy `RucResource` usa `[0-9]+` y el Provider exige 11 dígitos; un RUC de otra longitud llega al Provider y responde 400, lo cual es correcto).
+- `BadRequestHttpException` para parámetros inválidos, `NotFoundHttpException` cuando no hay filas. No devolver `200` con resultado vacío.
+- `paginationEnabled: false` salvo que el endpoint realmente devuelva colecciones grandes.
+- `trim()` del parámetro antes de validar.
 
-## Repositorios
+## Acceso a datos
 
-- Un repository por agregado, extendiendo `Webkul\Core\Eloquent\Repository`.
-- Side-effects (archivos, conversión de imágenes, llamadas externas) van en el repository, nunca en el controller ni en el FormRequest.
-- Antes de tocar lógica de subida de archivos, revisar si existe ya un método reusado por Admin y Shop (p.ej. `ProductMediaRepository` es compartido) — un fix a medias (solo un lado) dejó bugs reales esta sesión.
+- Query Builder con **bindings** (`->where('col', $valor)`), nunca concatenar SQL ni `DB::raw` con input del usuario.
+- Siempre indicar la conexión explícita: `DB::connection('sqlsrv_main')` o `DB::connection('sqlsrv_reniec')`.
+- Tablas con esquema: `dbo.nombre`.
+- Solo lecturas (`first()`, `get()`) sobre tablas de datos (`reniec`, `amdocs`, `claro`, `ruc`). La API **no escribe** en esas tablas; la única tabla que la app modifica es `api_tokens`.
+- Seleccionar columnas explícitas si una tabla crece mucho en columnas o tiene datos sensibles que no deben exponerse (hoy se devuelve la fila completa).
+- Pensar en índices: todo campo usado como filtro (`dni`, `document`, `primary_resource_value`, `DOCUMENTO`, `TELEFONO`, `RUC`) debe estar indexado en SQL Server; coordinar con el DBA/Jose antes de crear índices.
 
-## Sanitización HTML / campos WYSIWYG
+## Autenticación y middleware
 
-- Nunca deshabilitar `clean_content()`/HTMLPurifier para "que pase". Si un tag o propiedad CSS legítima falta:
-  1. Agregar el tag con sus atributos mínimos necesarios a `HTML.Allowed` en `config/purify.php`.
-  2. Agregar las propiedades CSS puntuales a `CSS.AllowedProperties`.
-  3. Si la propiedad es "proprietary" para HTMLPurifier (p.ej. `border-radius`), confirmar `CSS.Proprietary => true` está activo — si no, HTMLPurifier lanza un error fatal (no silencioso) al construir la definición CSS, y el guardado del formulario devuelve 500.
-  4. Siempre `php artisan config:clear` después de tocar `config/purify.php` — es config cacheable.
-- Recordar: HTML permitido pero con estilos no whitelisteados no da error — simplemente el atributo se pierde en el guardado. Si "el HTML se ve pero sin estilos", es esto, no un bug de render.
+- No quitar `CheckApiToken` ni agregar rutas a la lista pública sin una razón explícita del usuario.
+- Si se agrega una ruta pública, añadirla al array `$publicPaths` de `CheckApiToken` y documentarla en el README.
+- Nunca loguear tokens ni secretos; si se añaden campos sensibles nuevos al request, agregarlos a `sanitizeData()` de `LogEndpointQuery`.
+- Leer configuración con `config('services.api_token_generator...')`, no con `env()` fuera de `config/*.php` (con `config:cache` `env()` devuelve `null`). `ApiTokenController` hoy usa `env()` como fallback; no replicar ese patrón.
 
-## Configuración editable (`core_config`)
+## Configuración y secretos
 
-- Un límite, flag o texto que el negocio pueda querer cambiar sin deploy va como campo en `Admin/src/Config/system.php` + se lee con `core()->getConfigData(...)`, con un fallback razonable en código si la fila está vacía.
-- No crear tablas nuevas para settings simples; usar `core_config` (key/value, opcionalmente por canal/locale).
-- Cambios directos a `core_config` vía `artisan tinker` (para setear un valor sin pasar por el admin) son aceptables para este proyecto (acceso directo autorizado a la BD de producción), pero: leer el valor actual antes de sobreescribir, y correr `php artisan cache:clear` después (estos valores pueden cachearse en `cache` store).
+- Credenciales de SQL Server, `APP_KEY` y `API_TOKEN_GENERATOR_SECRET` solo en `.env` (no versionado). Cualquier variable nueva: agregarla también a `.env.example` sin valor real.
+- No escribir tokens reales, contraseñas ni IPs internas en README, scripts (`test-api.sh`) ni en `.ia-context`.
 
 ## Manejo de errores / diagnóstico
 
-- Ante un 500 en cualquier flujo de guardado, **lo primero** es `tail -100 storage/logs/laravel.log` — casi siempre el stacktrace apunta directo a la causa (así se encontró el bug de `border-radius`/HTMLPurifier).
-- No asumir que un mensaje genérico de error ("Ups, algo salió mal") es el problema real — es la página 500 estándar de api-platform; el log tiene la excepción real.
+- Ante un 500: `tail -100 storage/logs/laravel.log`.
+- Para ver qué consultó quién: `tail -f storage/logs/endpoint-queries-$(date +%F).log`.
+- Errores de conexión a SQL Server: revisar extensión `sqlsrv`/`pdo_sqlsrv` (`php -m | grep sqlsrv`), puerto 1433 y variables `SQLSRV_MAIN_*` / `RENIEC_DB_*`.
 
-## Caché — checklist después de cambios backend
+## Caché — checklist después de cambios
 
-1. `php artisan config:clear` si tocaste cualquier `config/*.php`.
-2. `php artisan view:clear` si tocaste Blade.
-3. `php artisan cache:clear` si tocaste datos en `core_config` u otro dato leído vía `Cache`.
-4. `php artisan optimize:clear` como martillo general si no estás seguro de cuál aplica.
-5. OPcache de PHP-FPM (`opcache.validate_timestamps=On`, revalida cada 2s) recoge cambios de `.php` solo; no reemplaza los pasos anteriores, que son cachés a nivel Laravel/app, no a nivel de bytecode.
+1. `php artisan optimize:clear` tras tocar `config/*.php`, `.env`, `bootstrap/app.php` o agregar/editar un `#[ApiResource]` (API Platform cachea metadata de recursos).
+2. PHP-FPM recoge cambios de `.php` por OPcache; si un cambio no se refleja en producción: `sudo systemctl reload php8.2-fpm`.
 
-## Verificación sin navegador
+## Verificación mínima antes de dar algo por terminado
 
-- Cuando no hay navegador disponible en la sesión, verificar cambios de storefront con `curl` simulando exactamente la request que dispararía el JS (mismos query params, cookie jar para mantener sesión) y comparando contenido (`grep`/`diff`) — así se confirmó que el fix de idioma/moneda funcionaba antes de que el usuario lo probara manualmente.
-- No dar un fix por confirmado solo porque "el código se ve correcto" — correr la request real cuando sea posible.
+```bash
+# sin token -> 401
+curl -s -o /dev/null -w "%{http_code}\n" https://api.metadatape.com/api/ruc/10100214283
+# con token -> 200 / 404
+curl -s -H "Authorization: Bearer $TOKEN" https://api.metadatape.com/api/ruc/10100214283
+# parámetro inválido -> 400
+curl -s -H "Authorization: Bearer $TOKEN" https://api.metadatape.com/api/ruc/123
+# docs siguen accesibles
+curl -s -o /dev/null -w "%{http_code}\n" https://api.metadatape.com/api/docs
+```
 
-## Archivos que casi nunca se deben tocar a la ligera
-
-- `config/purify.php` (afecta sanitización de **todo** contenido WYSIWYG del sitio, no solo el campo que estás arreglando) — cambios ahí son globales, revisar impacto amplio antes de ampliar la whitelist.
-- `packages/Webkul/Core/src/ImageCache/Controller.php` y `ProductMediaRepository.php` (afectan el pipeline de imágenes de todo el catálogo).
-- `packages/Webkul/FPC/src/Hasher/DefaultHasher.php` (afecta la key de caché de página completa de todo el sitio).
+`$TOKEN` se toma de una variable de entorno de la sesión, nunca se pega en archivos del repo.

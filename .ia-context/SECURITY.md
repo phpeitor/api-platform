@@ -1,15 +1,28 @@
-# Reporting Security Issues
+# Seguridad — api-platform
 
-Bagisto values the contributions of the security research community and appreciates your efforts to help keep Bagisto and its merchants secure.
+La API expone datos personales (RENIEC, líneas y titulares de operadores, RUC). Toda decisión debe priorizar no filtrar datos ni credenciales.
 
-## Where should I report security issues?
+## Modelo actual
 
-If you believe you have discovered a security vulnerability in Bagisto, **please do not** use the public issue tracker and **do not** disclose it publicly.
+- Acceso por **Bearer token** propio (`api_tokens`), validado en `CheckApiToken` para todo lo que no esté en la lista pública.
+- Tokens con expiración (`expires_at`, 30 días por defecto) y registro de uso (`last_used_at`).
+- Generación de tokens: comando artisan (acceso al servidor) o `POST /api/tokens/generate` con header `X-API-ADMIN-TOKEN` = `API_TOKEN_GENERATOR_SECRET`.
+- Todas las requests a `/api/*` quedan auditadas en `storage/logs/endpoint-queries-*.log` (con token id/nombre, IP, parámetros).
+- HTTPS obligatorio en `api.metadatape.com` (Certbot); HTTP redirige.
 
-Instead, you may report security issues through **either** of the following responsible disclosure channels:
+## Reglas
 
-- **Email:** Send detailed information to **support@bagisto.com**
+- Un token por cliente/aplicación, con `name`/`description` claros, para poder auditar y revocar.
+- Revocar = poner `expires_at` en el pasado o borrar la fila (con confirmación).
+- Los secretos viven solo en `.env`. No copiarlos en README, scripts, commits, issues ni `.ia-context`.
+- No ampliar `$publicPaths` de `CheckApiToken` sin pedido explícito.
+- No devolver trazas en producción: `APP_DEBUG=false` y `APP_ENV=production` en el `.env` del servidor.
 
-Both channels ensure that security issues are reviewed promptly and handled responsibly before any public disclosure.
+## Pendientes / riesgos detectados (2026-09-22)
 
-We appreciate your cooperation in helping us maintain a secure ecosystem for all Bagisto users.
+- `README.md` y `test-api.sh` contienen un token con formato real escrito en claro. Si es un token vigente, **revocarlo** y reemplazarlo por un placeholder (`YOUR_TOKEN`) / variable de entorno.
+- El `.env` del servidor tiene `APP_ENV=local` y `APP_DEBUG=true` aunque se sirve en producción → riesgo de exponer stacktraces. Confirmar con el usuario antes de cambiarlo.
+- Tokens guardados en texto plano. Mejora posible: guardar `hash('sha256', $token)` y comparar por hash (requiere migración y regenerar tokens).
+- `CheckApiToken` está registrado como middleware **global**, por lo que también exige token en rutas web (`/`, `/up`). No afecta a la API, pero tenerlo presente si se añaden rutas web.
+- Sin rate limiting por token. Mejora posible: `throttle` por `api_token_id`.
+- `ApiTokenController` usa `env()` como fallback del secreto; con `config:cache` ese fallback no funciona (solo cuenta `config('services.api_token_generator.secret')`).

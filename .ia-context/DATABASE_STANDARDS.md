@@ -1,51 +1,61 @@
-# Estándares de Base de Datos — api-platform (Bagisto)
+# Estándares de Base de Datos — api-platform
 
-MySQL (`pdo_mysql`), acceso directo disponible en este entorno vía `artisan tinker` sobre la **base de datos de producción** (`metadatape.com`). Tratar cada operación como productiva — no hay entorno de staging separado accesible desde aquí.
+Motor: **SQL Server**, base `BD_CRUCES`, driver `sqlsrv` (`pdo_sqlsrv`). Es la base **productiva** que también usan otros procesos de GEA (cargas, cruces, n8n, reportes). Tratar toda operación como productiva: no hay staging.
+
+## Tablas que usa la API
+
+| Tabla | Conexión | Rol de la API | Columna(s) filtro |
+|---|---|---|---|
+| `dbo.reniec` | `sqlsrv_reniec` | solo lectura | `dni` |
+| `dbo.amdocs` | `sqlsrv_reniec` | solo lectura | `document`, `primary_resource_value`, orden por `subscriber_key`, `subscriber_status_key` |
+| `dbo.claro` | `sqlsrv_main` | solo lectura | `DOCUMENTO`, `TELEFONO` (columnas en MAYÚSCULAS) |
+| `dbo.ruc` | `sqlsrv_main` | solo lectura | `RUC` |
+| `api_tokens` | `sqlsrv_main` | lectura/escritura | `token` (unique) |
+
+Las tablas de datos se cargan por procesos externos a este repo (no hay migraciones para ellas). **La API nunca debe crear, alterar ni borrar esas tablas.**
+
+### `api_tokens`
+
+Migraciones: `2024_04_17_create_api_tokens_table.php` y `2026_04_18_000001_add_expires_at_to_api_tokens_table.php`.
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `id` | bigint identity | PK |
+| `name` | nvarchar(255) | cliente/app |
+| `token` | nvarchar(80) unique | texto plano, prefijo `token_` |
+| `description` | nvarchar(max) null | |
+| `last_used_at` | datetime null | lo actualiza `CheckApiToken` |
+| `expires_at` | datetime null | vencido → 403 |
+| `created_at` / `updated_at` | datetime | |
+
+Tablas estándar de Laravel también migradas en `BD_CRUCES`: `users`, `cache`, `jobs`, `migrations` (no se usan activamente).
 
 ## Migraciones
 
-- Ubicación: `packages/Webkul/{Paquete}/src/Database/Migrations/`, cargadas por cada `ServiceProvider::boot()` (`loadMigrationsFrom`). Cada paquete gestiona sus propias tablas.
-- Nombrado: `YYYY_MM_DD_HHMMSS_verbo_descripcion.php`, igual que Laravel estándar.
-- **Idempotencia obligatoria**: Bagisto se instala/actualiza corriendo migraciones de múltiples paquetes en distintos entornos; toda migración que agrega columna/índice debe chequear existencia antes:
+- Ubicación: `database/migrations/`, formato `YYYY_MM_DD_HHMMSS_verbo_descripcion.php`.
+- Solo para tablas propias de la app (hoy `api_tokens`). Nunca crear migraciones que toquen `reniec`, `amdocs`, `claro`, `ruc`.
+- Guards de idempotencia (`Schema::hasColumn`, `Schema::hasTable`) cuando la migración pueda correr en una BD que ya tiene el cambio.
+- `down()` simétrico.
+- `php artisan migrate` corre contra producción: confirmar con el usuario antes de ejecutarlo y nunca usar `migrate:fresh`, `migrate:reset` ni `db:wipe`.
 
-```php
-Schema::table('product_price_indices', function (Blueprint $table) {
-    if (! Schema::hasIndex('product_price_indices', 'ppi_product_id_customer_group_id_idx')) {
-        $table->index(['product_id', 'customer_group_id'], 'ppi_product_id_customer_group_id_idx');
-    }
-});
+## Consultas
+
+- Query Builder con bindings; nunca interpolar input del usuario en SQL.
+- Mantener en cuenta la collation de SQL Server (normalmente case-insensitive): `'activo' = 'ACTIVO'` es verdadero; no depender de mayúsculas para filtrar.
+- Los nombres de columna se devuelven tal cual están en la tabla (en `dbo.claro` son MAYÚSCULAS; `ClaroByDocumentProvider` las pasa a minúsculas).
+- Tipos: documentos y teléfonos se comparan como string; si la columna es numérica en SQL Server, revisar conversiones implícitas que impidan usar el índice.
+
+## Operaciones manuales (tinker / sqlcmd)
+
+1. Leer antes de escribir (`SELECT` con el mismo `WHERE`).
+2. Escrituras solo sobre `api_tokens` y acotadas por `id`/`token` (p.ej. revocar un token = `UPDATE ... SET expires_at = GETDATE() WHERE id = ?`, o `DELETE` por `id` con confirmación).
+3. Confirmar con otro `SELECT`.
+4. Registrar la operación en `CAMBIOS_IMPLEMENTADOS.md` (sin copiar el token).
+
+Consultas útiles:
+
+```sql
+USE BD_CRUCES;
+SELECT id, name, description, last_used_at, expires_at, created_at FROM api_tokens ORDER BY id DESC;
+SELECT id, name FROM api_tokens WHERE expires_at < GETDATE();   -- vencidos
 ```
-
-- `down()` siempre simétrico y también con guard (`if (Schema::hasIndex(...)) dropIndex(...)`), nunca asumir que el estado previo existe.
-- Nombres de índice: prefijo corto de tabla + columnas + sufijo `_idx` (`ppi_product_id_customer_group_id_idx`, `pc_product_id_channel_id_idx`). Mantener ese patrón para que sea buscable por tabla.
-- No usar `Schema::drop`/`dropColumn` sobre tablas con datos reales sin antes confirmar con el usuario — es irreversible en producción sin backup propio.
-
-## Modelo EAV (productos)
-
-- No escribir queries crudas contra `product_attribute_values`/`product_flat` desde controllers o scripts puntuales. `product_flat` es una tabla **derivada** (una fila por producto+canal+locale) que se reconstruye vía indexers (`php artisan indexer:index`); escribir directo ahí se pierde en el próximo reindex.
-- Cambios de atributos de producto van por `ProductRepository`/`ProductAttributeValueRepository`, no por `DB::table('product_attribute_values')->update(...)` salvo debugging puntual y no persistente.
-
-## Configuración (`core_config`)
-
-- Tabla key/value: `code` (string, dot-notation tipo `catalog.products.attribute.file_attribute_upload_size`), `value`, `channel_code` opcional, `locale_code` opcional.
-- Antes de un `UPDATE` manual vía tinker: `SELECT` primero la fila para confirmar que existe y ver el valor actual (evita crear filas duplicadas con distinto scope por error).
-- Después de escribir, `php artisan cache:clear` — estos valores se cachean.
-
-## Traducciones (`*_translations`)
-
-- Patrón `astrotomic/laravel-translatable`: tabla base (`channels`, `products`, `categories`, `cms_pages`, ...) + tabla `_translations` con `locale` + FK al id base.
-- Al diagnosticar "el contenido no cambia por idioma", verificar primero si existe fila en `_translations` para ese `locale` y si tiene el campo relevante lleno — es común que un locale nuevo (`en`) quede con el placeholder/demo original de Bagisto en vez del contenido real (pasó con `channel_translations.home_seo` de `en`, tenía "Demo store").
-
-## Operaciones directas vía `artisan tinker` en este entorno
-
-Dado que este entorno tiene acceso directo a la BD de producción:
-
-1. **Leer antes de escribir**: `SELECT`/`DB::table(...)->where(...)->get()` para confirmar la fila objetivo antes de cualquier `update`/`insert`/`delete`.
-2. Preferir `DB::table(...)->update([...])` acotado por PK o `where` específico — nunca updates masivos sin `where` en producción.
-3. Confirmar el resultado con otro `SELECT` después de escribir.
-4. Limpiar los cachés que correspondan (`config:clear`, `cache:clear`, `optimize:clear`) — un `UPDATE` exitoso que no se refleja casi siempre es caché, no un fallo del write.
-5. Para cambios de datos que un futuro admin podría querer repetir/auditar, documentarlos en `CAMBIOS_IMPLEMENTADOS.md` igual que un cambio de código — no son "solo datos", son parte del comportamiento del sitio.
-
-## Charset / collation
-
-- Seguir el default ya establecido por las tablas existentes del proyecto (utf8mb4) — no fijar collation distinta por tabla nueva sin razón explícita.
