@@ -11,6 +11,11 @@ class CheckApiToken
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Solo se protegen las rutas de la API; las rutas web (/, /up) quedan libres
+        if (!$request->is('api') && !$request->is('api/*')) {
+            return $next($request);
+        }
+
         $publicPaths = [
             'api/health',
             'api/docs',

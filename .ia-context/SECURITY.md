@@ -23,6 +23,6 @@ La API expone datos personales (RENIEC, líneas y titulares de operadores, RUC).
 - ~~`README.md` y `test-api.sh` contienen un token real en claro.~~ **Resuelto 2026-09-22**: token id 1 ("Test Token") anulado (`expires_at` = fecha de anulación, responde 403) y reemplazado por `YOUR_TOKEN` / variable `API_TOKEN`. Sigue visible en el historial de git, por eso se anuló en vez de solo borrarlo del texto.
 - El `.env` del servidor tiene `APP_ENV=local` y `APP_DEBUG=true` aunque se sirve en producción → riesgo de exponer stacktraces. Confirmar con el usuario antes de cambiarlo.
 - Tokens guardados en texto plano. Mejora posible: guardar `hash('sha256', $token)` y comparar por hash (requiere migración y regenerar tokens).
-- `CheckApiToken` está registrado como middleware **global**, por lo que también exige token en rutas web (`/`, `/up`). No afecta a la API, pero tenerlo presente si se añaden rutas web.
+- ~~`CheckApiToken` exigía token también en rutas web (`/`, `/up`).~~ **Resuelto 2026-09-22**: ahora solo actúa sobre `api` y `api/*`.
 - Sin rate limiting por token. Mejora posible: `throttle` por `api_token_id`.
 - `ApiTokenController` usa `env()` como fallback del secreto; con `config:cache` ese fallback no funciona (solo cuenta `config('services.api_token_generator.secret')`).

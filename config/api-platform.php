@@ -22,5 +22,14 @@ return [
 
     'swagger_ui' => [
         'enabled' => true,
+        // Habilita el botón "Authorize" para enviar el Bearer token desde /api/docs
+        'http_auth' => [
+            'Bearer' => [
+                'scheme' => 'bearer',
+                'bearerFormat' => 'token_*',
+            ],
+        ],
+        // Mantiene el token cargado al recargar la página
+        'persist_authorization' => true,
     ],
 ];

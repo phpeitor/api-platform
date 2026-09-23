@@ -72,7 +72,7 @@ JSON-LD de API Platform (`@context`, `@id`, `@type`, identificador y `attributes
 
 ## 4. Autenticación: Bearer token propio (no Sanctum/Passport)
 
-- Middleware `App\Http\Middleware\CheckApiToken`, registrado **global** en `bootstrap/app.php` (`$middleware->use([...])`), por lo que corre en **todas** las requests, no solo `/api/*`.
+- Middleware `App\Http\Middleware\CheckApiToken`, registrado global en `bootstrap/app.php` (`$middleware->use([...])`), pero solo actúa sobre `api` y `api/*`; las rutas web (`/`, `/up`) pasan sin token.
 - Rutas públicas (whitelist por prefijo): `api`, `api/health`, `api/docs`, `api/contexts`, `api/errors`, `api/validation_errors`, `api/.well-known`, `api/tokens/generate`.
 - Resto: exige `Authorization: Bearer <token>`:
   - Sin header / formato incorrecto → **401**.

@@ -37,3 +37,10 @@ Historial de cambios del proyecto. **Solo agregar entradas nuevas al final**, no
 ## 3 `.env` de producción en modo debug (pendiente)
 
 - El `.env` del servidor tiene `APP_ENV=local` y `APP_DEBUG=true`. El cambio a `production`/`false` quedó pendiente de que el usuario lo ejecute manualmente (el agente no tuvo permiso para editar `.env`).
+
+## 4 `CheckApiToken` solo protege rutas de la API
+
+- Archivo: `app/Http/Middleware/CheckApiToken.php`
+- El middleware es global (`bootstrap/app.php`) y exigía Bearer token también en rutas web: `/` (página de bienvenida) y `/up` respondían 401.
+- Cambio: al inicio de `handle()` se deja pasar toda request que no sea `api` o `api/*`. Las rutas de la API mantienen exactamente la misma validación (lista pública + Bearer token).
+- Verificación con `curl` pendiente de ejecutar por el usuario (el agente no tuvo permiso).
