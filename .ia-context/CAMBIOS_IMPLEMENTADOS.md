@@ -44,3 +44,9 @@ Historial de cambios del proyecto. **Solo agregar entradas nuevas al final**, no
 - El middleware es global (`bootstrap/app.php`) y exigía Bearer token también en rutas web: `/` (página de bienvenida) y `/up` respondían 401.
 - Cambio: al inicio de `handle()` se deja pasar toda request que no sea `api` o `api/*`. Las rutas de la API mantienen exactamente la misma validación (lista pública + Bearer token).
 - Verificación con `curl` pendiente de ejecutar por el usuario (el agente no tuvo permiso).
+
+## 5 Swagger UI: botón "Authorize" con Bearer token
+
+- Archivo: `config/api-platform.php` → `swagger_ui.http_auth.Bearer` (`scheme: bearer`) y `persist_authorization: true`.
+- Antes el OpenAPI no declaraba `securitySchemes`, así que "Try it out" en `/api/docs` enviaba la petición sin `Authorization` y siempre daba 401.
+- Verificado: `/api/docs` (OpenAPI JSON) ahora expone `securitySchemes.Bearer` y `security: [{Bearer: []}]`. `php artisan optimize:clear` ejecutado.

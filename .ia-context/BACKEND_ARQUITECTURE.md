@@ -100,6 +100,7 @@ Hoy ambas apuntan a la misma BD `BD_CRUCES`; están separadas para poder mover R
 ## 7. Documentación OpenAPI
 
 - `config/api-platform.php`: título `Metadatape`, Swagger UI activo (ReDoc y Scalar desactivados), `docs_formats` prioriza `html` para que `/api/docs` abra la UI.
+- Swagger UI tiene esquema `Bearer` (`swagger_ui.http_auth`) con `persist_authorization`: en `/api/docs` → **Authorize** → pegar el token (sin la palabra "Bearer") → "Try it out".
 - Assets publicados con `php artisan vendor:publish --tag=api-platform-assets --force`.
 - Todo endpoint nuevo declarado como `#[ApiResource]` aparece automáticamente en `/api/docs`; las rutas de `routes/api.php` **no** aparecen ahí (documentarlas en el README).
 
